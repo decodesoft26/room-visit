@@ -149,41 +149,41 @@ export default function RoomHistoryPage() {
   return (
     <>
       <Navbar user={session.data} hotelName={hotel?.name} />
-      <main className="min-h-svh pt-4 pb-24 text-[#12322d] md:pt-28 md:pb-12">
-        <section className="mx-auto max-w-6xl px-4 md:px-6">
-          <div className="soft-card p-4 sm:p-5 md:p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <main className="min-h-svh pt-3 pb-20 text-[#12322d] md:pt-28 md:pb-12">
+        <section className="mx-auto max-w-6xl px-3 md:px-6">
+          <div className="soft-card p-3 sm:p-4 md:p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-[11px] font-semibold tracking-[0.22em] text-[#6b8c82] uppercase">
+                <p className="text-[10px] font-semibold tracking-[0.2em] text-[#6b8c82] uppercase">
                   Room detail
                 </p>
-                <h1 className="mt-2 text-3xl font-bold tracking-[-0.07em] text-[#12322d] md:text-4xl">
+                <h1 className="mt-1 text-2xl font-bold tracking-[-0.06em] text-[#12322d] md:text-3xl">
                   Room {room.roomNo}
                 </h1>
               </div>
-              <div className="rounded-2xl bg-[#eef9f4] px-3 py-2 text-sm font-medium text-[#155c4e]">
+              <div className="rounded-2xl bg-[#eef9f4] px-3 py-1.5 text-sm font-medium text-[#155c4e]">
                 {room.roomType} · {room.roomFloor}
               </div>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 md:flex-row">
+          <div className="mt-4 flex flex-col gap-3 md:flex-row">
             <div className="flex flex-1 items-center gap-2 rounded-2xl border border-[rgba(18,52,46,0.08)] bg-white/85 px-3 shadow-[0_8px_20px_rgba(17,41,36,0.03)] transition focus-within:border-[#1c7d68] focus-within:ring-4 focus-within:ring-[#1c7d68]/10">
-              <Search className="shrink-0 text-[#7b918c]" size={16} />
+              <Search className="shrink-0 text-[#7b918c]" size={15} />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by title, remarks..."
-                className="h-11 w-full bg-transparent text-sm text-[#12322d] outline-none placeholder:text-[#9bafa9]"
+                className="h-10 w-full bg-transparent text-sm text-[#12322d] outline-none placeholder:text-[#9bafa9]"
               />
             </div>
             <div className="flex items-center gap-2 rounded-2xl border border-[rgba(18,52,46,0.08)] bg-white/85 px-3 shadow-[0_8px_20px_rgba(17,41,36,0.03)] transition focus-within:border-[#1c7d68] focus-within:ring-4 focus-within:ring-[#1c7d68]/10 md:w-[220px]">
-              <Filter className="shrink-0 text-[#7b918c]" size={16} />
+              <Filter className="shrink-0 text-[#7b918c]" size={15} />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-11 w-full appearance-none bg-transparent px-1 text-sm text-[#12322d] outline-none"
+                className="h-10 w-full appearance-none bg-transparent pr-2 text-sm text-[#12322d] outline-none"
               >
                 <option value="">All status</option>
                 <option value="OK">OK</option>
@@ -193,16 +193,52 @@ export default function RoomHistoryPage() {
             </div>
           </div>
 
-          <div className="soft-card mt-5 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+          <div className="soft-card mt-4 overflow-hidden">
+            <div className="md:hidden">
+              <div className="space-y-3 p-3">
+                {visits.map((visit) => (
+                  <button
+                    key={visit._id}
+                    type="button"
+                    onClick={() => setSelectedVisit(visit)}
+                    className="w-full rounded-2xl border border-[rgba(18,52,46,0.06)] bg-[#f9fbfa] p-3 text-left shadow-[0_8px_18px_rgba(17,41,36,0.02)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#12322d]">
+                          {visit.title}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#67857d]">
+                          {visit.visitBy?.name || "Unknown"} ·{" "}
+                          {formatDate(visit.createdAt)}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-[9px] font-bold ${visit.status === "URGENT" ? "bg-rose-50 text-rose-700" : visit.status === "ATTENTION" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}
+                      >
+                        {visit.status}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-[#567167]">
+                      <span>Room {visit.roomId?.roomNo || "—"}</span>
+                      <span className="inline-flex items-center gap-1 font-semibold text-[#155c4e]">
+                        View <Eye size={12} />
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[620px] text-left text-sm">
                 <thead className="border-b border-[rgba(18,52,46,0.08)] bg-[#f6faf8] text-[10px] tracking-[0.18em] text-[#67857d] uppercase">
                   <tr>
-                    <th className="px-4 py-3">Title</th>
-                    <th className="px-4 py-3">Visited by</th>
-                    <th className="px-4 py-3">Date & time</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Details</th>
+                    <th className="px-3 py-3">Title</th>
+                    <th className="px-3 py-3">Visited by</th>
+                    <th className="px-3 py-3">Date & time</th>
+                    <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3 text-right">Details</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -211,28 +247,28 @@ export default function RoomHistoryPage() {
                       key={visit._id}
                       className="border-b border-[rgba(18,52,46,0.06)] last:border-0 hover:bg-[#f8fbf9]"
                     >
-                      <td className="px-4 py-4 font-semibold text-[#12322d]">
+                      <td className="px-3 py-3 font-semibold text-[#12322d]">
                         {visit.title}
                       </td>
-                      <td className="px-4 py-4 text-sm text-[#45675b]">
+                      <td className="px-3 py-3 text-sm text-[#45675b]">
                         {visit.visitBy?.name || "Unknown"}
                       </td>
-                      <td className="px-4 py-4 text-xs text-[#5f7f76]">
+                      <td className="px-3 py-3 text-[11px] text-[#5f7f76]">
                         {formatDate(visit.createdAt)}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-3">
                         <span
                           className={`rounded-full px-2 py-1 text-[10px] font-bold ${visit.status === "URGENT" ? "bg-rose-50 text-rose-700" : visit.status === "ATTENTION" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}
                         >
                           {visit.status}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-right">
+                      <td className="px-3 py-3 text-right">
                         <button
                           onClick={() => setSelectedVisit(visit)}
-                          className="inline-flex items-center gap-2 rounded-xl bg-[#eaf7f2] px-3 py-2 text-xs font-semibold text-[#155c4e]"
+                          className="inline-flex items-center gap-2 rounded-xl bg-[#eaf7f2] px-3 py-2 text-[11px] font-semibold text-[#155c4e]"
                         >
-                          <Eye size={14} /> View
+                          <Eye size={13} /> View
                         </button>
                       </td>
                     </tr>
@@ -242,14 +278,14 @@ export default function RoomHistoryPage() {
             </div>
 
             {visits.length === 0 && (
-              <p className="p-10 text-center text-sm text-[#67857d]">
+              <p className="p-8 text-center text-sm text-[#67857d] md:p-10">
                 No visits recorded for this room yet.
               </p>
             )}
 
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-[rgba(18,52,46,0.08)] bg-[#f8fbfa] px-4 py-3">
-                <p className="text-sm text-[#67857d]">
+              <div className="flex items-center justify-between border-t border-[rgba(18,52,46,0.08)] bg-[#f8fbfa] px-3 py-2.5 md:px-4 md:py-3">
+                <p className="text-xs text-[#67857d] md:text-sm">
                   Page {pagination.page} of {pagination.totalPages} ·{" "}
                   {pagination.total} visits
                 </p>
@@ -257,18 +293,18 @@ export default function RoomHistoryPage() {
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={pagination.page === 1}
-                    className="rounded-xl border border-[rgba(18,52,46,0.08)] bg-white px-3 py-1.5 text-sm font-semibold text-[#155c4e] disabled:opacity-40"
+                    className="rounded-xl border border-[rgba(18,52,46,0.08)] bg-white px-2.5 py-1.5 text-sm font-semibold text-[#155c4e] disabled:opacity-40 md:px-3"
                   >
-                    <ChevronLeft size={16} />
+                    <ChevronLeft size={15} />
                   </button>
                   <button
                     onClick={() =>
                       setPage((p) => Math.min(pagination.totalPages, p + 1))
                     }
                     disabled={pagination.page === pagination.totalPages}
-                    className="rounded-xl border border-[rgba(18,52,46,0.08)] bg-white px-3 py-1.5 text-sm font-semibold text-[#155c4e] disabled:opacity-40"
+                    className="rounded-xl border border-[rgba(18,52,46,0.08)] bg-white px-2.5 py-1.5 text-sm font-semibold text-[#155c4e] disabled:opacity-40 md:px-3"
                   >
-                    <ChevronRight size={16} />
+                    <ChevronRight size={15} />
                   </button>
                 </div>
               </div>

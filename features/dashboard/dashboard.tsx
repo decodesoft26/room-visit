@@ -55,6 +55,7 @@ export function Dashboard() {
   const [roomModal, setRoomModal] = useState(false)
   const [userModal, setUserModal] = useState(false)
   const [visit, setVisit] = useState<Room | null>(null)
+  const [roomSearch, setRoomSearch] = useState("")
 
   const session = useQuery({
     queryKey: ["session"],
@@ -114,22 +115,26 @@ export function Dashboard() {
   const dueAttention =
     rooms.data?.filter((room) => room.lastVisit?.status === "ATTENTION")
       .length ?? 0
+  const filteredRooms =
+    rooms.data?.filter((room) =>
+      room.roomNo.toLowerCase().includes(roomSearch.trim().toLowerCase())
+    ) ?? []
 
   return (
     <>
       <Navbar user={session.data} hotelName={hotel?.name} />
-      <main className="min-h-svh bg-transparent pt-4 pb-24 text-[#12322d] md:pt-28 md:pb-12">
-        <section className="mx-auto max-w-6xl px-4 md:px-6">
-          <header className="soft-card overflow-hidden p-4 sm:p-5 md:p-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+      <main className="min-h-svh bg-transparent pt-3 pb-20 text-[#12322d] md:pt-24 md:pb-12">
+        <section className="mx-auto max-w-6xl px-3 md:px-6">
+          <header className="soft-card overflow-hidden p-3 sm:p-4 md:p-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-[11px] font-semibold tracking-[0.24em] text-[#6b8c82] uppercase">
+                <p className="text-[10px] font-semibold tracking-[0.2em] text-[#6b8c82] uppercase">
                   Malaysia time · MYT
                 </p>
-                <h1 className="mt-2 text-3xl font-bold tracking-[-0.07em] text-[#12322d] md:text-4xl">
+                <h1 className="mt-1 text-2xl font-bold tracking-[-0.06em] text-[#12322d] md:text-3xl">
                   Room visits dashboard
                 </h1>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <button
                     onClick={() =>
                       session.data.role === "SUPER_ADMIN" && setPicker(true)
@@ -170,47 +175,71 @@ export function Dashboard() {
             </div>
           </header>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <div className="metric-card">
-              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b8c82] uppercase">
+          <div className="mt-4 grid grid-cols-3 gap-2 md:gap-4">
+            <div className="metric-card p-3 md:p-4">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-[#6b8c82] uppercase md:text-xs">
                 Rooms
               </p>
-              <div className="mt-3 flex items-end justify-between">
-                <span className="text-3xl font-bold tracking-[-0.07em]">
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <span className="text-2xl font-bold tracking-[-0.06em] md:text-3xl">
                   {totalRooms}
                 </span>
-                <div className="rounded-2xl bg-[#eaf7f2] p-2 text-[#155c4e]">
-                  <Building2 size={18} />
+                <div className="rounded-xl bg-[#eaf7f2] p-1.5 text-[#155c4e] md:p-2">
+                  <Building2 size={16} className="md:h-[18px] md:w-[18px]" />
                 </div>
               </div>
             </div>
 
-            <div className="metric-card">
-              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b8c82] uppercase">
+            <div className="metric-card p-3 md:p-4">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-[#6b8c82] uppercase md:text-xs">
                 Urgent
               </p>
-              <div className="mt-3 flex items-end justify-between">
-                <span className="text-3xl font-bold tracking-[-0.07em] text-rose-600">
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <span className="text-2xl font-bold tracking-[-0.06em] text-rose-600 md:text-3xl">
                   {urgentRooms}
                 </span>
-                <div className="rounded-2xl bg-rose-50 p-2 text-rose-600">
-                  <ShieldCheck size={18} />
+                <div className="rounded-xl bg-rose-50 p-1.5 text-rose-600 md:p-2">
+                  <ShieldCheck size={16} className="md:h-[18px] md:w-[18px]" />
                 </div>
               </div>
             </div>
 
-            <div className="metric-card">
-              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b8c82] uppercase">
+            <div className="metric-card p-3 md:p-4">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-[#6b8c82] uppercase md:text-xs">
                 Needs attention
               </p>
-              <div className="mt-3 flex items-end justify-between">
-                <span className="text-3xl font-bold tracking-[-0.07em] text-amber-600">
+              <div className="mt-2 flex items-end justify-between gap-2">
+                <span className="text-2xl font-bold tracking-[-0.06em] text-amber-600 md:text-3xl">
                   {dueAttention}
                 </span>
-                <div className="rounded-2xl bg-amber-50 p-2 text-amber-600">
-                  <Sparkles size={18} />
+                <div className="rounded-xl bg-amber-50 p-1.5 text-amber-600 md:p-2">
+                  <Sparkles size={16} className="md:h-[18px] md:w-[18px]" />
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center gap-2 rounded-2xl border border-[rgba(18,52,46,0.08)] bg-white/85 px-3 shadow-[0_8px_20px_rgba(17,41,36,0.03)] transition focus-within:border-[#1c7d68] focus-within:ring-4 focus-within:ring-[#1c7d68]/10">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 text-[#7b918c]"
+              >
+                <circle cx="11" cy="11" r="6" />
+                <path d="m16 16 4 4" />
+              </svg>
+              <input
+                type="text"
+                value={roomSearch}
+                onChange={(e) => setRoomSearch(e.target.value)}
+                placeholder="Search room number"
+                className="h-10 w-full bg-transparent text-sm text-[#12322d] outline-none placeholder:text-[#9bafa9]"
+              />
             </div>
           </div>
 
@@ -219,63 +248,69 @@ export function Dashboard() {
               <Skeleton />
             </div>
           ) : (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {rooms.data?.map((r) => (
-                <article
-                  key={r._id}
-                  className="soft-card group relative p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_45px_rgba(17,38,33,0.08)]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-3xl font-bold tracking-[-0.07em] text-[#12322d]">
-                          {r.roomNo}
-                        </span>
-                        {r.lastVisit && (
-                          <span
-                            className={`rounded-full px-2 py-1 text-[10px] font-bold ${badgeStyles[r.lastVisit.status]}`}
-                          >
-                            {r.lastVisit.status}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredRooms.length === 0 ? (
+                <div className="soft-card col-span-full p-6 text-center text-sm text-[#67857d]">
+                  No rooms found for room number "{roomSearch}".
+                </div>
+              ) : (
+                filteredRooms.map((r) => (
+                  <article
+                    key={r._id}
+                    className="soft-card group relative p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_45px_rgba(17,38,33,0.08)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl font-bold tracking-[-0.07em] text-[#12322d]">
+                            {r.roomNo}
                           </span>
-                        )}
+                          {r.lastVisit && (
+                            <span
+                              className={`rounded-full px-2 py-1 text-[10px] font-bold ${badgeStyles[r.lastVisit.status]}`}
+                            >
+                              {r.lastVisit.status}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-[#718f87]">
+                          {r.roomType} · {r.roomFloor}
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs text-[#718f87]">
-                        {r.roomType} · {r.roomFloor}
+                      <Link
+                        href={`/room-history/${r._id}`}
+                        className="grid size-9 place-items-center rounded-2xl bg-[#f4faf7] text-[#1f9b7b] transition group-hover:bg-[#eaf7f2]"
+                        aria-label={`View history for room ${r.roomNo}`}
+                      >
+                        <Info size={16} />
+                      </Link>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl bg-[#f4faf7] p-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-[#5f7f76] uppercase">
+                        <Clock3 size={14} />
+                        Last visit
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-[#12322d]">
+                        {r.lastVisit
+                          ? new Intl.DateTimeFormat("en-MY", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                              timeZone: "Asia/Kuala_Lumpur",
+                            }).format(new Date(r.lastVisit.createdAt))
+                          : "Not visited yet"}
                       </p>
                     </div>
-                    <Link
-                      href={`/room-history/${r._id}`}
-                      className="grid size-9 place-items-center rounded-2xl bg-[#f4faf7] text-[#1f9b7b] transition group-hover:bg-[#eaf7f2]"
-                      aria-label={`View history for room ${r.roomNo}`}
+
+                    <button
+                      onClick={() => setVisit(r)}
+                      className="mt-4 w-full rounded-2xl bg-gradient-to-r from-[#1c7d68] to-[#145d4f] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(28,125,104,0.22)] transition hover:-translate-y-0.5"
                     >
-                      <Info size={16} />
-                    </Link>
-                  </div>
-
-                  <div className="mt-4 rounded-2xl bg-[#f4faf7] p-3">
-                    <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-[#5f7f76] uppercase">
-                      <Clock3 size={14} />
-                      Last visit
-                    </div>
-                    <p className="mt-2 text-sm font-medium text-[#12322d]">
-                      {r.lastVisit
-                        ? new Intl.DateTimeFormat("en-MY", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                            timeZone: "Asia/Kuala_Lumpur",
-                          }).format(new Date(r.lastVisit.createdAt))
-                        : "Not visited yet"}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setVisit(r)}
-                    className="mt-4 w-full rounded-2xl bg-gradient-to-r from-[#1c7d68] to-[#145d4f] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(28,125,104,0.22)] transition hover:-translate-y-0.5"
-                  >
-                    Visit now
-                  </button>
-                </article>
-              ))}
+                      Visit now
+                    </button>
+                  </article>
+                ))
+              )}
             </div>
           )}
         </section>
