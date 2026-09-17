@@ -6,6 +6,7 @@ import {
   Clock3,
   ImagePlus,
   Info,
+  Loader2,
   MapPin,
   Plus,
   ShieldCheck,
@@ -57,6 +58,7 @@ export function Dashboard() {
   const [userModal, setUserModal] = useState(false)
   const [visit, setVisit] = useState<Room | null>(null)
   const [roomSearch, setRoomSearch] = useState("")
+  const [navigatingRoomId, setNavigatingRoomId] = useState<string | null>(null)
 
   const session = useQuery({
     queryKey: ["session"],
@@ -295,13 +297,22 @@ export function Dashboard() {
                           {r.roomType} · {r.roomFloor}
                         </p>
                       </div>
-                      <Link
-                        href={`/room-history/${r._id}`}
-                        className="grid size-9 place-items-center rounded-2xl bg-[#f4faf7] text-[#1f9b7b] transition group-hover:bg-[#eaf7f2]"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNavigatingRoomId(r._id)
+                          router.push(`/room-history/${r._id}`)
+                        }}
+                        disabled={navigatingRoomId === r._id}
+                        className="grid size-9 place-items-center rounded-2xl bg-[#f4faf7] text-[#1f9b7b] transition hover:bg-[#eaf7f2] disabled:cursor-wait disabled:opacity-80"
                         aria-label={`View history for room ${r.roomNo}`}
                       >
-                        <Info size={16} />
-                      </Link>
+                        {navigatingRoomId === r._id ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Info size={16} />
+                        )}
+                      </button>
                     </div>
 
                     <div className="mt-4 rounded-2xl bg-[#f4faf7] p-3">
