@@ -1,0 +1,20 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="40" fill="url(#paint0_linear_1_2)"/>
+  <circle cx="598" cy="325" r="232" fill="rgba(255,255,255,0.18)"/>
+  <path d="M408 598C408 540.771 454.771 494 512 494H688C745.229 494 792 540.771 792 598V670C792 727.229 745.229 774 688 774H512C454.771 774 408 727.229 408 670V598Z" fill="rgba(255,255,255,0.18)"/>
+  <path d="M664 392L741 468L875 334L1011 468V608H415V468L520 363L664 392Z" fill="rgba(255,255,255,0.18)"/>
+  <rect x="510" y="274" width="180" height="180" rx="90" fill="rgba(255,255,255,0.18)"/>
+  <rect x="299" y="690" width="602" height="54" rx="27" fill="rgba(255,255,255,0.18)"/>
+  <g opacity="0.9">
+    <path d="M497 310C497 269.13 529.13 237 570 237H631C671.87 237 704 269.13 704 310V343C704 383.87 671.87 416 631 416H570C529.13 416 497 383.87 497 343V310Z" fill="rgba(255,255,255,0.3)"/>
+    <path d="M452 474C452 426.503 490.503 388 538 388H662C709.497 388 748 426.503 748 474V495H452V474Z" fill="rgba(255,255,255,0.12)"/>
+  </g>
+  <text x="600" y="720" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="64" font-weight="700" letter-spacing="2">NO PHOTO</text>
+  <defs>
+    <linearGradient id="paint0_linear_1_2" x1="135" y1="88" x2="1085" y2="833" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B7A6B"/>
+      <stop offset="0.52" stop-color="#74A69A"/>
+      <stop offset="1" stop-color="#D2E6E0"/>
+    </linearGradient>
+  </defs>
+</svg>

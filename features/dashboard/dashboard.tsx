@@ -301,7 +301,9 @@ export function Dashboard() {
                         type="button"
                         onClick={() => {
                           setNavigatingRoomId(r._id)
-                          router.push(`/room-history/${r._id}`)
+                          router.push(
+                            `/history?roomNo=${encodeURIComponent(r.roomNo)}`
+                          )
                         }}
                         disabled={navigatingRoomId === r._id}
                         className="grid size-9 place-items-center rounded-2xl bg-[#f4faf7] text-[#1f9b7b] transition hover:bg-[#eaf7f2] disabled:cursor-wait disabled:opacity-80"

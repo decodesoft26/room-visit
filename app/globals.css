@@ -101,6 +101,31 @@ body {
   background: #f6faf8;
 }
 
+.history-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(169, 200, 192, 0.9) transparent;
+}
+
+.history-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.history-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.history-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(169, 200, 192, 0.9);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+
+.history-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(112, 170, 159, 0.95);
+}
+
 @keyframes slide-up {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

@@ -4,16 +4,31 @@ import { connectDb } from "@/lib/db"
 import { Room, Visit } from "@/lib/models"
 import { createVisit } from "@/lib/services/visit.service"
 
+function normalizeFilter(value: string) {
+  return value.trim()
+}
+
 export async function POST(request: Request) {
   const user = await currentUser()
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const form = await request.formData()
   const roomId = String(form.get("roomId"))
   await connectDb()
   const room = await Room.findById(roomId)
-  if (!room || !canAccess(user, String(room.hotelId))) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  const files = form.getAll("photos").filter((entry): entry is File => entry instanceof File && entry.size > 0)
-  const result = await createVisit({ roomId, userId: user._id, title: form.get("title"), status: form.get("status"), remarks: form.get("remarks"), files })
+  if (!room || !canAccess(user, String(room.hotelId)))
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  const files = form
+    .getAll("photos")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0)
+  const result = await createVisit({
+    roomId,
+    userId: user._id,
+    title: form.get("title"),
+    status: form.get("status"),
+    remarks: form.get("remarks"),
+    files,
+  })
   return NextResponse.json(result?.visit, { status: 201 })
 }
 
@@ -24,36 +39,71 @@ export async function GET(request: Request) {
   const roomId = url.searchParams.get("roomId")
   const page = parseInt(url.searchParams.get("page") || "1")
   const limit = parseInt(url.searchParams.get("limit") || "10")
-  const search = url.searchParams.get("search") || ""
-  const status = url.searchParams.get("status") || ""
-  
-  if (!hotelId || !canAccess(user, hotelId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-  
+  const search = normalizeFilter(url.searchParams.get("search") || "")
+  const status = normalizeFilter(url.searchParams.get("status") || "")
+  const roomType = normalizeFilter(url.searchParams.get("roomType") || "")
+  const roomNo = normalizeFilter(url.searchParams.get("roomNo") || "")
+  const sort = url.searchParams.get("sort") || "newest"
+
+  if (!hotelId || !canAccess(user, hotelId))
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
   await connectDb()
-  
+
   const query: Record<string, unknown> = { hotelId }
-  
+  const textSearch = search ? { $regex: search, $options: "i" } : null
+
   if (roomId) {
     query.roomId = roomId
   }
-  
+
+  const roomMatchCriteria: Record<string, unknown> = { hotelId }
+  if (roomType) roomMatchCriteria.roomType = roomType
+  if (roomNo) roomMatchCriteria.roomNo = roomNo
   if (search) {
-    query.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { remarks: { $regex: search, $options: "i" } },
-      { "roomId.roomNo": { $regex: search, $options: "i" } },
+    roomMatchCriteria.$or = [
+      { roomNo: { $regex: search, $options: "i" } },
+      { roomType: { $regex: search, $options: "i" } },
     ]
   }
-  
+
+  const matchingRoomIds = await Room.find(roomMatchCriteria)
+    .select("_id")
+    .lean()
+  const matchingRoomObjectIds = matchingRoomIds.map((room) => room._id)
+
+  if (roomType || roomNo || search) {
+    if (matchingRoomObjectIds.length === 0) {
+      query.roomId = { $in: [] }
+    } else {
+      query.roomId = { $in: matchingRoomObjectIds }
+    }
+  }
+
   if (status) {
     query.status = status
   }
-  
+
+  if (search || roomType || roomNo) {
+    const textConditions: Record<string, unknown>[] = []
+    if (textSearch) {
+      textConditions.push({ title: textSearch }, { remarks: textSearch })
+    }
+    if (matchingRoomObjectIds.length) {
+      textConditions.push({ roomId: { $in: matchingRoomObjectIds } })
+    }
+    if (textConditions.length) {
+      query.$or = textConditions
+    }
+  }
+
   const skip = (page - 1) * limit
-  
+  const sortValue: Record<string, 1 | -1> =
+    sort === "oldest" ? { createdAt: 1 } : { createdAt: -1 }
+
   const [visits, total] = await Promise.all([
     Visit.find(query)
-      .sort({ createdAt: -1 })
+      .sort(sortValue)
       .skip(skip)
       .limit(limit)
       .populate("roomId", "roomNo roomType")
@@ -61,7 +111,7 @@ export async function GET(request: Request) {
       .lean(),
     Visit.countDocuments(query),
   ])
-  
+
   return NextResponse.json({
     visits,
     pagination: {
