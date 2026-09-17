@@ -8,6 +8,8 @@ import {
   Info,
   MapPin,
   Plus,
+  ShieldCheck,
+  Sparkles,
   X,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -29,6 +31,13 @@ type Room = {
   roomFloor: string
   lastVisit: { status: Status; createdAt: string } | null
 }
+
+const badgeStyles: Record<Status, string> = {
+  OK: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+  ATTENTION: "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
+  URGENT: "bg-rose-50 text-rose-700 ring-1 ring-rose-100",
+}
+
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const r = await fetch(url, init)
   if (!r.ok) {
@@ -37,14 +46,16 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   }
   return r.json()
 }
+
 export function Dashboard() {
-  const router = useRouter(),
-    qc = useQueryClient()
-  const [hotelId, setHotelId] = useState<string | null>(null),
-    [picker, setPicker] = useState(false),
-    [roomModal, setRoomModal] = useState(false),
-    [userModal, setUserModal] = useState(false),
-    [visit, setVisit] = useState<Room | null>(null)
+  const router = useRouter()
+  const qc = useQueryClient()
+  const [hotelId, setHotelId] = useState<string | null>(null)
+  const [picker, setPicker] = useState(false)
+  const [roomModal, setRoomModal] = useState(false)
+  const [userModal, setUserModal] = useState(false)
+  const [visit, setVisit] = useState<Room | null>(null)
+
   const session = useQuery({
     queryKey: ["session"],
     queryFn: () => api<User>("/api/auth/me"),
@@ -59,142 +70,235 @@ export function Dashboard() {
     queryFn: () => api<Room[]>(`/api/rooms?hotelId=${hotelId}`),
     enabled: !!hotelId,
   })
+
   useEffect(() => {
     if (session.isError) router.replace("/login")
   }, [session.isError, router])
+
   useEffect(() => {
-    if (session.data?.role === "USER" && session.data.hotelId)
+    if (session.data?.role === "USER" && session.data.hotelId) {
       setHotelId(session.data.hotelId)
+    }
     if (session.data?.role === "SUPER_ADMIN" && hotels.isSuccess && !hotelId) {
-      const saved = localStorage.getItem(`room-visit:selected-hotel:${session.data.name}`)
-      if (saved && hotels.data?.some((hotel) => hotel._id === saved)) setHotelId(saved)
+      const saved = localStorage.getItem(
+        `room-visit:selected-hotel:${session.data.name}`
+      )
+      if (saved && hotels.data?.some((hotel) => hotel._id === saved))
+        setHotelId(saved)
       else setPicker(true)
     }
   }, [session.data, hotels.isSuccess, hotels.data, hotelId])
+
   function selectHotel(id: string) {
     setHotelId(id)
-    if (session.data?.role === "SUPER_ADMIN") localStorage.setItem(`room-visit:selected-hotel:${session.data.name}`, id)
+    if (session.data?.role === "SUPER_ADMIN")
+      localStorage.setItem(`room-visit:selected-hotel:${session.data.name}`, id)
     setPicker(false)
   }
-  if (session.isLoading || hotels.isLoading) return (
-    <>
-      <Navbar user={session.data} />
-      <Skeleton />
-    </>
-  )
+
+  if (session.isLoading || hotels.isLoading)
+    return (
+      <>
+        <Navbar user={session.data} />
+        <Skeleton />
+      </>
+    )
+
   if (!session.data) return <Navbar user={null} />
+
   const hotel = hotels.data?.find((h) => h._id === hotelId)
+  const totalRooms = rooms.data?.length ?? 0
+  const urgentRooms =
+    rooms.data?.filter((room) => room.lastVisit?.status === "URGENT").length ??
+    0
+  const dueAttention =
+    rooms.data?.filter((room) => room.lastVisit?.status === "ATTENTION")
+      .length ?? 0
+
   return (
     <>
       <Navbar user={session.data} hotelName={hotel?.name} />
-      <main className="min-h-svh bg-[#f5f7f5] text-[#18332b] pt-16 md:pt-20 pb-20 md:pb-0">
-        <section className="mx-auto max-w-5xl p-4">
-        <div className="flex justify-between">
-          <div>
-            <p className="text-xs text-[#789087]">Malaysia time · MYT</p>
-            <h1 className="text-2xl font-bold">Room visits</h1>
-            <Link
-              href="/history"
-              className="mt-1 inline-block text-xs font-bold text-[#18715d]"
-            >
-              View visit history →
-            </Link>
-          </div>
-          {session.data.role === "SUPER_ADMIN" && (
-            <div className="flex gap-2">
-              <button
-                disabled={!hotelId}
-                onClick={() => setUserModal(true)}
-                className="rounded-xl border bg-white px-3 text-sm font-bold disabled:opacity-40"
-              >
-                User
-              </button>
-              <button
-                disabled={!hotelId}
-                onClick={() => setRoomModal(true)}
-                className="rounded-xl bg-[#186f5b] px-3 text-sm font-bold text-white disabled:opacity-40"
-              >
-                <Plus className="inline" size={16} /> Room
-              </button>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={() => session.data.role === "SUPER_ADMIN" && setPicker(true)}
-          className="mt-5 flex w-full gap-2 rounded-2xl border bg-white p-4 text-left"
-        >
-          <MapPin className="text-[#1f9b7b]" />
-          <span>
-            <small className="block text-[#789087]">Selected hotel</small>
-            <b>{hotel?.name || "Choose a hotel"}</b>
-          </span>
-        </button>
-        {rooms.isLoading ? (
-          <Skeleton />
-        ) : (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {rooms.data?.map((r) => (
-              <article
-                key={r._id}
-                className="relative rounded-2xl border bg-white p-4"
-              >
-                <div className="flex justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <b className="text-2xl">{r.roomNo}</b>
-                      {r.lastVisit && (
-                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">
-                          {r.lastVisit.status}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[#789087]">
-                      {r.roomType} · {r.roomFloor}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/room-history/${r._id}`}
-                    className="absolute top-4 right-4 grid size-8 place-items-center rounded-xl text-[#789087] hover:bg-emerald-50 hover:text-[#18715d]"
-                    aria-label={`View history for room ${r.roomNo}`}
+      <main className="min-h-svh bg-transparent pt-4 pb-24 text-[#12322d] md:pt-28 md:pb-12">
+        <section className="mx-auto max-w-6xl px-4 md:px-6">
+          <header className="soft-card overflow-hidden p-4 sm:p-5 md:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.24em] text-[#6b8c82] uppercase">
+                  Malaysia time · MYT
+                </p>
+                <h1 className="mt-2 text-3xl font-bold tracking-[-0.07em] text-[#12322d] md:text-4xl">
+                  Room visits dashboard
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() =>
+                      session.data.role === "SUPER_ADMIN" && setPicker(true)
+                    }
+                    className="secondary-button gap-2"
                   >
-                    <Info size={16} />
+                    <MapPin size={16} className="text-[#1f9b7b]" />
+                    <span>{hotel?.name || "Choose hotel"}</span>
+                  </button>
+                  <Link
+                    href="/history"
+                    className="secondary-button text-[#155c4e]"
+                  >
+                    View history
                   </Link>
                 </div>
-                <p className="mt-4 flex gap-1 text-xs text-[#789087]">
-                  <Clock3 size={14} />
-                  {r.lastVisit
-                    ? new Intl.DateTimeFormat("en-MY", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                        timeZone: "Asia/Kuala_Lumpur",
-                      }).format(new Date(r.lastVisit.createdAt))
-                    : "Not visited"}
-                </p>
-                <button
-                  onClick={() => setVisit(r)}
-                  className="mt-3 w-full rounded-xl bg-[#e9f5f0] py-2 text-xs font-bold text-[#18715d]"
-                >
-                  Visit now
-                </button>
-              </article>
-            ))}
+              </div>
+
+              {session.data.role === "SUPER_ADMIN" && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    disabled={!hotelId}
+                    onClick={() => setUserModal(true)}
+                    className="secondary-button disabled:opacity-40"
+                  >
+                    Create user
+                  </button>
+                  <button
+                    disabled={!hotelId}
+                    onClick={() => setRoomModal(true)}
+                    className="primary-button disabled:opacity-40"
+                  >
+                    <Plus size={16} />
+                    Add room
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="metric-card">
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b8c82] uppercase">
+                Rooms
+              </p>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-3xl font-bold tracking-[-0.07em]">
+                  {totalRooms}
+                </span>
+                <div className="rounded-2xl bg-[#eaf7f2] p-2 text-[#155c4e]">
+                  <Building2 size={18} />
+                </div>
+              </div>
+            </div>
+
+            <div className="metric-card">
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b8c82] uppercase">
+                Urgent
+              </p>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-3xl font-bold tracking-[-0.07em] text-rose-600">
+                  {urgentRooms}
+                </span>
+                <div className="rounded-2xl bg-rose-50 p-2 text-rose-600">
+                  <ShieldCheck size={18} />
+                </div>
+              </div>
+            </div>
+
+            <div className="metric-card">
+              <p className="text-xs font-semibold tracking-[0.18em] text-[#6b8c82] uppercase">
+                Needs attention
+              </p>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-3xl font-bold tracking-[-0.07em] text-amber-600">
+                  {dueAttention}
+                </span>
+                <div className="rounded-2xl bg-amber-50 p-2 text-amber-600">
+                  <Sparkles size={18} />
+                </div>
+              </div>
+            </div>
           </div>
+
+          {rooms.isLoading ? (
+            <div className="mt-5">
+              <Skeleton />
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {rooms.data?.map((r) => (
+                <article
+                  key={r._id}
+                  className="soft-card group relative p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_45px_rgba(17,38,33,0.08)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-3xl font-bold tracking-[-0.07em] text-[#12322d]">
+                          {r.roomNo}
+                        </span>
+                        {r.lastVisit && (
+                          <span
+                            className={`rounded-full px-2 py-1 text-[10px] font-bold ${badgeStyles[r.lastVisit.status]}`}
+                          >
+                            {r.lastVisit.status}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-[#718f87]">
+                        {r.roomType} · {r.roomFloor}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/room-history/${r._id}`}
+                      className="grid size-9 place-items-center rounded-2xl bg-[#f4faf7] text-[#1f9b7b] transition group-hover:bg-[#eaf7f2]"
+                      aria-label={`View history for room ${r.roomNo}`}
+                    >
+                      <Info size={16} />
+                    </Link>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl bg-[#f4faf7] p-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-[#5f7f76] uppercase">
+                      <Clock3 size={14} />
+                      Last visit
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-[#12322d]">
+                      {r.lastVisit
+                        ? new Intl.DateTimeFormat("en-MY", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                            timeZone: "Asia/Kuala_Lumpur",
+                          }).format(new Date(r.lastVisit.createdAt))
+                        : "Not visited yet"}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setVisit(r)}
+                    className="mt-4 w-full rounded-2xl bg-gradient-to-r from-[#1c7d68] to-[#145d4f] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(28,125,104,0.22)] transition hover:-translate-y-0.5"
+                  >
+                    Visit now
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {picker && (
+          <HotelPicker hotels={hotels.data || []} select={selectHotel} />
         )}
-      </section>
-      {picker && (
-        <HotelPicker hotels={hotels.data || []} select={selectHotel} />
-      )}
-      {roomModal && hotelId && (
-        <RoomForm hotelId={hotelId} close={() => setRoomModal(false)} />
-      )}{" "}
-      {userModal && hotelId && (
-        <UserForm hotelId={hotelId} hotels={hotels.data || []} close={() => setUserModal(false)} />
-      )}
-{visit && <VisitForm room={visit} close={() => setVisit(null)} />}
+        {roomModal && hotelId && (
+          <RoomForm hotelId={hotelId} close={() => setRoomModal(false)} />
+        )}
+        {userModal && hotelId && (
+          <UserForm
+            hotelId={hotelId}
+            hotels={hotels.data || []}
+            close={() => setUserModal(false)}
+          />
+        )}
+        {visit && <VisitForm room={visit} close={() => setVisit(null)} />}
       </main>
     </>
   )
 }
+
 function HotelPicker({
   hotels,
   select,
@@ -203,8 +307,9 @@ function HotelPicker({
   select: (id: string) => void
 }) {
   const qc = useQueryClient()
-  const [name, setName] = useState(""),
-    [address, setAddress] = useState("")
+  const [name, setName] = useState("")
+  const [address, setAddress] = useState("")
+
   const m = useMutation({
     mutationFn: () =>
       api<Hotel>("/api/hotels", {
@@ -219,21 +324,24 @@ function HotelPicker({
     },
     onError: (e: Error) => toast.error(e.message),
   })
+
   return (
     <Modal>
-      <h2 className="text-xl font-bold">Select a hotel</h2>
-      <p className="text-sm text-[#789087]">
-        You must select a hotel to continue.
+      <h2 className="text-xl font-bold tracking-[-0.04em] text-[#12322d]">
+        Select a hotel
+      </h2>
+      <p className="mt-1 text-sm text-[#67857d]">
+        Choose the property you want to manage.
       </p>
       <div className="mt-4 space-y-2">
         {hotels.map((h) => (
           <button
             key={h._id}
             onClick={() => select(h._id)}
-            className="w-full rounded-xl border p-3 text-left"
+            className="w-full rounded-2xl border border-[rgba(18,52,46,0.08)] bg-[#f7faf8] p-3 text-left transition hover:bg-[#edf7f3]"
           >
-            <b>{h.name}</b>
-            <small className="block text-[#789087]">{h.address}</small>
+            <b className="text-[#12322d]">{h.name}</b>
+            <small className="mt-1 block text-[#67857d]">{h.address}</small>
           </button>
         ))}
       </div>
@@ -242,9 +350,11 @@ function HotelPicker({
           e.preventDefault()
           m.mutate()
         }}
-        className="mt-5 border-t pt-4"
+        className="mt-5 border-t border-[rgba(18,52,46,0.08)] pt-4"
       >
-        <b className="text-sm">Create hotel profile</b>
+        <b className="text-sm font-semibold tracking-[0.14em] text-[#67857d] uppercase">
+          Create hotel profile
+        </b>
         <input
           required
           value={name}
@@ -259,21 +369,20 @@ function HotelPicker({
           className="input mt-2"
           placeholder="Address"
         />
-        <button
-          disabled={m.isPending}
-          className="mt-3 w-full rounded-xl bg-[#186f5b] py-3 text-sm font-bold text-white"
-        >
+        <button disabled={m.isPending} className="primary-button mt-3 w-full">
           {m.isPending ? "Creating…" : "Create & select"}
         </button>
       </form>
     </Modal>
   )
 }
+
 function RoomForm({ hotelId, close }: { hotelId: string; close: () => void }) {
   const qc = useQueryClient()
-  const [roomNo, setNo] = useState(""),
-    [roomType, setType] = useState(""),
-    [roomFloor, setFloor] = useState("")
+  const [roomNo, setNo] = useState("")
+  const [roomType, setType] = useState("")
+  const [roomFloor, setFloor] = useState("")
+
   const m = useMutation({
     mutationFn: () =>
       api("/api/rooms", {
@@ -288,44 +397,50 @@ function RoomForm({ hotelId, close }: { hotelId: string; close: () => void }) {
     },
     onError: (e: Error) => toast.error(e.message),
   })
+
   return (
     <Modal close={close}>
-      <h2 className="text-xl font-bold">Add room</h2>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          m.mutate()
-        }}
-        className="mt-4 space-y-2"
-      >
-        {[
-          [roomNo, setNo, "Room number"],
-          [roomType, setType, "Room type"],
-          [roomFloor, setFloor, "Floor"],
-        ].map(([v, s, p]) => (
-          <input
-            key={String(p)}
-            required
-            value={v as string}
-            onChange={(e) => (s as (v: string) => void)(e.target.value)}
-            className="input"
-            placeholder={p as string}
-          />
-        ))}
-      </form>
+      <h2 className="text-xl font-bold tracking-[-0.04em] text-[#12322d]">
+        Add room
+      </h2>
+      <div className="mt-4 space-y-2">
+        <input
+          required
+          value={roomNo}
+          onChange={(e) => setNo(e.target.value)}
+          className="input"
+          placeholder="Room number"
+        />
+        <input
+          required
+          value={roomType}
+          onChange={(e) => setType(e.target.value)}
+          className="input"
+          placeholder="Room type"
+        />
+        <input
+          required
+          value={roomFloor}
+          onChange={(e) => setFloor(e.target.value)}
+          className="input"
+          placeholder="Floor"
+        />
+      </div>
       <button
         onClick={() => m.mutate()}
         disabled={m.isPending}
-        className="mt-3 w-full rounded-xl bg-[#186f5b] py-3 text-sm font-bold text-white"
+        className="primary-button mt-4 w-full"
       >
         {m.isPending ? "Saving…" : "Create room"}
       </button>
     </Modal>
   )
 }
+
 function VisitForm({ room, close }: { room: Room; close: () => void }) {
   const qc = useQueryClient()
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([])
+
   const m = useMutation({
     mutationFn: (f: FormData) =>
       api("/api/visits", { method: "POST", body: f }),
@@ -336,9 +451,12 @@ function VisitForm({ room, close }: { room: Room; close: () => void }) {
     },
     onError: (e: Error) => toast.error(e.message),
   })
+
   return (
     <Modal close={close}>
-      <h2 className="text-xl font-bold">Visit room {room.roomNo}</h2>
+      <h2 className="text-xl font-bold tracking-[-0.04em] text-[#12322d]">
+        Visit room {room.roomNo}
+      </h2>
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -365,7 +483,7 @@ function VisitForm({ room, close }: { room: Room; close: () => void }) {
           className="input min-h-24 py-3"
           placeholder="Remarks"
         />
-        <label className="flex cursor-pointer gap-2 rounded-xl border border-dashed p-3 text-sm font-bold text-[#287d67]">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#bfe1d6] bg-[#f3faf7] p-3 text-sm font-semibold text-[#1d7d67]">
           <ImagePlus size={18} />
           {photos.length ? `${photos.length} photo(s) selected` : "Add photos"}
           <input
@@ -408,7 +526,7 @@ function VisitForm({ room, close }: { room: Room; close: () => void }) {
                       current.filter((item) => item.url !== photo.url)
                     )
                   }}
-                  className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-[#18332b] text-white"
+                  className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-[#12322d] text-white"
                 >
                   <X size={12} />
                 </button>
@@ -416,27 +534,39 @@ function VisitForm({ room, close }: { room: Room; close: () => void }) {
             ))}
           </div>
         )}
-        <button
-          disabled={m.isPending}
-          className="w-full rounded-xl bg-[#186f5b] py-3 text-sm font-bold text-white"
-        >
+        <button disabled={m.isPending} className="primary-button w-full">
           {m.isPending ? "Uploading & saving…" : "Save visit"}
         </button>
       </form>
     </Modal>
   )
 }
-function UserForm({ hotelId, hotels, close }: { hotelId: string | null; hotels: Hotel[]; close: () => void }) {
-  const [name, setName] = useState(""),
-    [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
-    [selectedHotelId, setSelectedHotelId] = useState<string>("")
+
+function UserForm({
+  hotelId,
+  hotels,
+  close,
+}: {
+  hotelId: string | null
+  hotels: Hotel[]
+  close: () => void
+}) {
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [selectedHotelId, setSelectedHotelId] = useState<string>("")
+
   const mutation = useMutation({
     mutationFn: () =>
       api("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, hotelId: selectedHotelId || hotelId }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          hotelId: selectedHotelId || hotelId,
+        }),
       }),
     onSuccess: () => {
       toast.success("Team user created")
@@ -444,9 +574,12 @@ function UserForm({ hotelId, hotels, close }: { hotelId: string | null; hotels: 
     },
     onError: (error: Error) => toast.error(error.message),
   })
+
   return (
     <Modal close={close}>
-      <h2 className="pr-10 text-xl font-bold">Create team user</h2>
+      <h2 className="pr-10 text-xl font-bold tracking-[-0.04em] text-[#12322d]">
+        Create team user
+      </h2>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -480,7 +613,9 @@ function UserForm({ hotelId, hotels, close }: { hotelId: string | null; hotels: 
         />
         {hotels.length > 0 && (
           <div>
-            <label className="block text-xs font-medium text-[#789087] mb-1">Hotel</label>
+            <label className="mb-1 block text-xs font-semibold tracking-[0.14em] text-[#67857d] uppercase">
+              Hotel
+            </label>
             <select
               required
               value={selectedHotelId}
@@ -496,16 +631,14 @@ function UserForm({ hotelId, hotels, close }: { hotelId: string | null; hotels: 
             </select>
           </div>
         )}
-        <button
-          disabled={mutation.isPending}
-          className="w-full rounded-xl bg-[#186f5b] py-3 text-sm font-bold text-white"
-        >
+        <button disabled={mutation.isPending} className="primary-button w-full">
           {mutation.isPending ? "Creating…" : "Create user"}
         </button>
       </form>
     </Modal>
   )
 }
+
 function Modal({
   children,
   close,
@@ -514,16 +647,16 @@ function Modal({
   close?: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-20 grid place-items-end bg-black/30 sm:place-items-center">
-      <div className="relative w-full max-w-md rounded-t-3xl bg-[#f9fbf9] p-5 sm:rounded-3xl">
+    <div className="fixed inset-0 z-20 grid place-items-end bg-[#0c1c1a]/40 p-2 sm:place-items-center sm:p-6">
+      <div className="relative w-full max-w-md rounded-[30px] border border-[rgba(18,52,46,0.08)] bg-[#fbfdfc] p-5 shadow-[0_32px_60px_rgba(15,33,29,0.12)] sm:rounded-[28px]">
         {close && (
           <button
             type="button"
             aria-label="Close dialog"
             onClick={close}
-            className="absolute top-4 right-4 grid size-9 place-items-center rounded-xl text-[#45675b] hover:bg-emerald-50"
+            className="absolute top-4 right-4 grid size-9 place-items-center rounded-xl bg-[#f2f8f5] text-[#45675b]"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
         {children}
@@ -531,6 +664,9 @@ function Modal({
     </div>
   )
 }
+
 function Skeleton() {
-  return <div className="m-5 h-40 animate-pulse rounded-2xl bg-white" />
+  return (
+    <div className="soft-card h-40 animate-pulse bg-gradient-to-r from-[#eff5f3] via-white to-[#eff5f3]" />
+  )
 }
