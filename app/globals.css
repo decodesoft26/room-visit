@@ -14,7 +14,7 @@
   --brand: #1c7d68;
   --brand-strong: #135f4d;
   --brand-soft: #dff6ef;
-  --shadow: 0 20px 55px rgba(15, 33, 29, 0.09);
+  --shadow: 0 16px 36px rgba(15, 33, 29, 0.08);
 }
 
 html {
@@ -24,8 +24,8 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(27, 145, 116, 0.12), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(58, 124, 198, 0.08), transparent 22%),
+    radial-gradient(circle at top left, rgba(27, 145, 116, 0.1), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(58, 124, 198, 0.06), transparent 18%),
     var(--bg);
   color: var(--text);
 }
@@ -35,19 +35,19 @@ body {
 }
 
 ::selection {
-  background: rgba(28, 125, 104, 0.18);
+  background: rgba(28, 125, 104, 0.16);
 }
 
 .input {
-  @apply h-11 w-full rounded-2xl border border-[rgba(18,52,46,0.08)] bg-white/85 px-3 text-sm text-[#12322d] shadow-[0_8px_20px_rgba(17,41,36,0.03)] outline-none transition placeholder:text-[#93a8a1] focus:border-[#1c7d68] focus:ring-4 focus:ring-[#1c7d68]/10;
+  @apply h-11 w-full rounded-xl border border-[rgba(18,52,46,0.08)] bg-white/85 px-3 text-sm text-[#12322d] shadow-[0_8px_18px_rgba(17,41,36,0.02)] outline-none transition placeholder:text-[#93a8a1] focus:border-[#1c7d68] focus:ring-4 focus:ring-[#1c7d68]/10;
 }
 
 .soft-card {
-  @apply rounded-[28px] border border-[rgba(18,52,46,0.06)] bg-white/80 shadow-[0_20px_45px_rgba(16,38,33,0.06)] backdrop-blur-xl;
+  @apply rounded-[22px] border border-[rgba(18,52,46,0.06)] bg-white/80 shadow-[0_16px_34px_rgba(16,38,33,0.05)] backdrop-blur-xl;
 }
 
 .metric-card {
-  @apply rounded-[24px] border border-[rgba(18,52,46,0.06)] bg-white/80 p-4 shadow-[0_14px_30px_rgba(21,43,36,0.05)] backdrop-blur-xl;
+  @apply rounded-[18px] border border-[rgba(18,52,46,0.06)] bg-white/80 p-4 shadow-[0_12px_24px_rgba(21,43,36,0.04)] backdrop-blur-xl;
 }
 
 .action-button {
@@ -55,9 +55,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  padding: 0.625rem 1rem;
-  font-size: 0.875rem;
+  border-radius: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   transition: all 0.2s ease;
 }
@@ -67,19 +67,19 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  padding: 0.625rem 1rem;
-  font-size: 0.875rem;
+  border-radius: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: white;
   background: linear-gradient(135deg, #1c7d68 0%, #145d4f 100%);
-  box-shadow: 0 12px 25px rgba(28, 125, 104, 0.25);
+  box-shadow: 0 10px 20px rgba(28, 125, 104, 0.2);
   transition: all 0.2s ease;
 }
 
 .primary-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 16px 30px rgba(28, 125, 104, 0.3);
+  box-shadow: 0 12px 24px rgba(28, 125, 104, 0.24);
 }
 
 .secondary-button {
@@ -87,9 +87,9 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
-  padding: 0.625rem 1rem;
-  font-size: 0.875rem;
+  border-radius: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   border: 1px solid rgba(18, 52, 46, 0.08);
   background: rgba(255, 255, 255, 0.85);
