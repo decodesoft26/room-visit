@@ -8,6 +8,10 @@ function normalizeFilter(value: string) {
   return value.trim()
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
 export async function POST(request: Request) {
   const user = await currentUser()
   if (!user)
@@ -51,7 +55,8 @@ export async function GET(request: Request) {
   await connectDb()
 
   const query: Record<string, unknown> = { hotelId }
-  const textSearch = search ? { $regex: search, $options: "i" } : null
+  const escapedSearch = search ? escapeRegex(search) : ""
+  const textSearch = search ? { $regex: escapedSearch, $options: "i" } : null
 
   if (roomId) {
     query.roomId = roomId
@@ -62,8 +67,8 @@ export async function GET(request: Request) {
   if (roomNo) roomMatchCriteria.roomNo = roomNo
   if (search) {
     roomMatchCriteria.$or = [
-      { roomNo: { $regex: search, $options: "i" } },
-      { roomType: { $regex: search, $options: "i" } },
+      { roomNo: { $regex: escapedSearch, $options: "i" } },
+      { roomType: { $regex: escapedSearch, $options: "i" } },
     ]
   }
 
@@ -71,13 +76,14 @@ export async function GET(request: Request) {
     .select("_id")
     .lean()
   const matchingRoomObjectIds = matchingRoomIds.map((room) => room._id)
+  const hasRoomMatchFilter = Boolean(
+    roomType || roomNo || (search && matchingRoomObjectIds.length > 0)
+  )
 
-  if (roomType || roomNo || search) {
-    if (matchingRoomObjectIds.length === 0) {
-      query.roomId = { $in: [] }
-    } else {
-      query.roomId = { $in: matchingRoomObjectIds }
-    }
+  if (hasRoomMatchFilter) {
+    query.roomId = { $in: matchingRoomObjectIds }
+  } else if ((roomType || roomNo) && matchingRoomObjectIds.length === 0) {
+    query.roomId = { $in: [] }
   }
 
   if (status) {
@@ -89,7 +95,7 @@ export async function GET(request: Request) {
     if (textSearch) {
       textConditions.push({ title: textSearch }, { remarks: textSearch })
     }
-    if (matchingRoomObjectIds.length) {
+    if (matchingRoomObjectIds.length && hasRoomMatchFilter) {
       textConditions.push({ roomId: { $in: matchingRoomObjectIds } })
     }
     if (textConditions.length) {
