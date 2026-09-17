@@ -3,12 +3,13 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, Eye, Image as ImageIcon, X, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { ArrowLeft, Image as ImageIcon, X, Search, Filter, ChevronLeft, ChevronRight, Building2, Eye } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 
 type Session = { name: string; role: "SUPER_ADMIN" | "USER"; hotelId: string | null }
-type Hotel = { _id: string; name: string }
+type Hotel = { _id: string; name: string; address: string }
+type Room = { _id: string; roomNo: string; roomType: string; roomFloor: string }
 type Visit = { _id: string; title: string; status: string; remarks: string; createdAt: string; roomId: { roomNo: string; roomType: string }; visitBy: { name: string }; photos: { url: string }[] }
 type Pagination = { page: number; limit: number; total: number; totalPages: number }
 
@@ -22,14 +23,17 @@ function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-MY", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur" }).format(new Date(date))
 }
 
-export default function HistoryPage() {
+export default function RoomHistoryPage() {
   const router = useRouter()
+  const params = useParams()
+  const roomId = params.roomId as string
   const [hotelId, setHotelId] = useState<string | null>(null)
-  const [selected, setSelected] = useState<Visit | null>(null)
+  const [room, setRoom] = useState<Room | null>(null)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null)
 
   const session = useQuery({ queryKey: ["session"], queryFn: () => api<Session>("/api/auth/me") })
   const hotels = useQuery({ queryKey: ["hotels"], queryFn: () => api<Hotel[]>("/api/hotels"), enabled: !!session.data })
@@ -43,23 +47,47 @@ export default function HistoryPage() {
     }
   }, [session.data, session.isError, hotels.data, router])
 
+  const roomQuery = useQuery({
+    queryKey: ["room", roomId],
+    queryFn: () => api<Room>(`/api/rooms/${roomId}`),
+    enabled: !!roomId && !!hotelId,
+  })
+
+  useEffect(() => {
+    if (roomQuery.data) setRoom(roomQuery.data)
+  }, [roomQuery.data])
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(timer)
   }, [search])
 
   const visitsQuery = useQuery({
-    queryKey: ["visits", hotelId, page, debouncedSearch, statusFilter],
-    queryFn: () => api<{ visits: Visit[]; pagination: Pagination }>(`/api/visits?hotelId=${hotelId}&page=${page}&limit=10&search=${encodeURIComponent(debouncedSearch)}&status=${statusFilter}`),
-    enabled: !!hotelId,
+    queryKey: ["room-visits", roomId, page, debouncedSearch, statusFilter],
+    queryFn: () => api<{ visits: Visit[]; pagination: Pagination }>(`/api/visits?hotelId=${hotelId}&roomId=${roomId}&page=${page}&limit=10&search=${encodeURIComponent(debouncedSearch)}&status=${statusFilter}`),
+    enabled: !!hotelId && !!roomId,
   })
 
-  if (session.isLoading || hotels.isLoading || visitsQuery.isLoading) {
+  if (session.isLoading || hotels.isLoading || roomQuery.isLoading || visitsQuery.isLoading) {
     return (
       <>
         <Navbar user={session.data} />
         <main className="min-h-svh bg-[#f5f7f5] p-5 pt-16 md:pt-20">
           <div className="h-64 animate-pulse rounded-2xl bg-white" />
+        </main>
+      </>
+    )
+  }
+
+  if (!room) {
+    return (
+      <>
+        <Navbar user={session.data} />
+        <main className="min-h-svh bg-[#f5f7f5] p-5 pt-16 md:pt-20">
+          <div className="mx-auto max-w-5xl text-center py-20">
+            <Building2 className="mx-auto h-16 w-16 text-[#789087]" />
+            <p className="mt-4 text-lg text-[#789087]">Loading room...</p>
+          </div>
         </main>
       </>
     )
@@ -82,7 +110,7 @@ export default function HistoryPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title, remarks, room..."
+              placeholder="Search by title, remarks..."
               className="input w-full pl-10"
             />
           </div>
@@ -107,27 +135,27 @@ export default function HistoryPage() {
               <thead className="border-b bg-[#f7faf8] text-xs uppercase tracking-wide text-[#789087]">
                 <tr>
                   <th className="px-4 py-3">Title</th>
-                  <th className="px-4 py-3">Room</th>
-                  <th className="px-4 py-3">Last visit</th>
+                  <th className="px-4 py-3">Visited by</th>
+                  <th className="px-4 py-3">Date & Time</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Details</th>
+                  <th className="px-4 py-3">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {visits.map((visit) => (
                   <tr key={visit._id} className="border-b border-emerald-950/6 last:border-0 hover:bg-[#f8fbf9]">
-                    <td className="px-4 py-3 font-semibold">
-                      {visit.title}
-                      <span className="mt-0.5 block text-xs font-normal text-[#789087]">by {visit.visitBy?.name || "Unknown"}</span>
-                    </td>
-                    <td className="px-4 py-3 font-bold">{visit.roomId?.roomNo || "—"}</td>
+                    <td className="px-4 py-3 font-semibold">{visit.title}</td>
+                    <td className="px-4 py-3 text-sm text-[#45675b]">{visit.visitBy?.name || "Unknown"}</td>
                     <td className="px-4 py-3 text-xs text-[#607970]">{formatDate(visit.createdAt)}</td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">{visit.status}</span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => setSelected(visit)} className="inline-flex items-center gap-1 rounded-lg bg-[#e9f5f0] px-2.5 py-1.5 text-xs font-bold text-[#18715d]">
-                        <Eye size={15} /> Details
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setSelectedVisit(visit)}
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#e9f5f0] px-2.5 py-1.5 text-xs font-bold text-[#18715d]"
+                      >
+                        <Eye size={14} /> View
                       </button>
                     </td>
                   </tr>
@@ -136,8 +164,8 @@ export default function HistoryPage() {
             </table>
           </div>
 
-          {hotelId && visits.length === 0 && (
-            <p className="p-10 text-center text-sm text-[#789087]">No visits recorded for this hotel yet.</p>
+          {visits.length === 0 && (
+            <p className="p-10 text-center text-sm text-[#789087]">No visits recorded for this room yet.</p>
           )}
 
           {pagination && pagination.totalPages > 1 && (
@@ -165,7 +193,10 @@ export default function HistoryPage() {
           )}
         </div>
       </section>
-      {selected && <DetailsDialog visit={selected} close={() => setSelected(null)} />}
+
+      {selectedVisit && (
+        <DetailsDialog visit={selectedVisit} close={() => setSelectedVisit(null)} />
+      )}
     </main>
   </>
 )
@@ -181,10 +212,19 @@ function DetailsDialog({ visit, close }: { visit: Visit; close: () => void }) {
         <p className="text-xs font-bold text-[#18715d]">ROOM {visit.roomId?.roomNo || "—"}</p>
         <h2 className="mt-1 pr-10 text-xl font-bold">{visit.title}</h2>
         <p className="mt-1 text-xs text-[#789087]">{formatDate(visit.createdAt)} · {visit.visitBy?.name || "Unknown user"}</p>
+        
+        <div className="mt-5 rounded-2xl bg-white p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#789087]">Status</p>
+          <p className="mt-2">
+            <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">{visit.status}</span>
+          </p>
+        </div>
+
         <div className="mt-5 rounded-2xl bg-white p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-[#789087]">Remarks</p>
           <p className="mt-2 text-sm leading-relaxed text-[#45675b]">{visit.remarks || "No remarks provided."}</p>
         </div>
+
         <div className="mt-4">
           <p className="text-xs font-bold uppercase tracking-wide text-[#789087]">Uploaded photos</p>
           {visit.photos?.length ? (

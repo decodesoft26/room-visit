@@ -5,7 +5,7 @@ import {
   Building2,
   Clock3,
   ImagePlus,
-  LogOut,
+  Info,
   MapPin,
   Plus,
   X,
@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
+import { Navbar } from "@/components/navbar"
 
 type Hotel = { _id: string; name: string; address: string }
 type User = {
@@ -75,52 +76,48 @@ export function Dashboard() {
     if (session.data?.role === "SUPER_ADMIN") localStorage.setItem(`room-visit:selected-hotel:${session.data.name}`, id)
     setPicker(false)
   }
-  const logout = useMutation({
-    mutationFn: () => api("/api/auth/logout", { method: "POST" }),
-    onSuccess: () => router.replace("/login"),
-    onError: () => toast.error("Sign out failed"),
-  })
-  if (session.isLoading || hotels.isLoading) return <Skeleton />
-  if (!session.data) return null
+  if (session.isLoading || hotels.isLoading) return (
+    <>
+      <Navbar user={session.data} />
+      <Skeleton />
+    </>
+  )
+  if (!session.data) return <Navbar user={null} />
   const hotel = hotels.data?.find((h) => h._id === hotelId)
   return (
-    <main className="min-h-svh bg-[#f5f7f5] text-[#18332b]">
-      <header className="border-b bg-white p-4">
-        <div className="mx-auto flex max-w-5xl justify-between">
-          <div className="flex gap-3">
-            <span className="grid size-10 place-items-center rounded-2xl bg-[#186f5b] text-white">
-              <Building2 />
-            </span>
-            <div>
-              <b>
-                room<span className="text-[#1f9b7b]">visit</span>
-              </b>
-              <p className="text-xs text-[#789087]">{session.data.name}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => logout.mutate()}
-            className="text-sm font-bold text-rose-600"
-          >
-            <LogOut className="mr-1 inline" size={16} />
-            {logout.isPending ? "Signing out…" : "Sign out"}
-          </button>
-        </div>
-      </header>
-      <section className="mx-auto max-w-5xl p-4">
+    <>
+      <Navbar user={session.data} hotelName={hotel?.name} />
+      <main className="min-h-svh bg-[#f5f7f5] text-[#18332b] pt-16 md:pt-20 pb-20 md:pb-0">
+        <section className="mx-auto max-w-5xl p-4">
         <div className="flex justify-between">
           <div>
             <p className="text-xs text-[#789087]">Malaysia time · MYT</p>
             <h1 className="text-2xl font-bold">Room visits</h1>
-            <Link href="/history" className="mt-1 inline-block text-xs font-bold text-[#18715d]">View visit history →</Link>
-          </div>
-          {session.data.role === "SUPER_ADMIN" && <div className="flex gap-2"><button disabled={!hotelId} onClick={() => setUserModal(true)} className="rounded-xl border bg-white px-3 text-sm font-bold disabled:opacity-40">User</button><button
-              disabled={!hotelId}
-              onClick={() => setRoomModal(true)}
-              className="rounded-xl bg-[#186f5b] px-3 text-sm font-bold text-white disabled:opacity-40"
+            <Link
+              href="/history"
+              className="mt-1 inline-block text-xs font-bold text-[#18715d]"
             >
-              <Plus className="inline" size={16} /> Room
-            </button></div>}
+              View visit history →
+            </Link>
+          </div>
+          {session.data.role === "SUPER_ADMIN" && (
+            <div className="flex gap-2">
+              <button
+                disabled={!hotelId}
+                onClick={() => setUserModal(true)}
+                className="rounded-xl border bg-white px-3 text-sm font-bold disabled:opacity-40"
+              >
+                User
+              </button>
+              <button
+                disabled={!hotelId}
+                onClick={() => setRoomModal(true)}
+                className="rounded-xl bg-[#186f5b] px-3 text-sm font-bold text-white disabled:opacity-40"
+              >
+                <Plus className="inline" size={16} /> Room
+              </button>
+            </div>
+          )}
         </div>
         <button
           onClick={() => session.data.role === "SUPER_ADMIN" && setPicker(true)}
@@ -137,19 +134,31 @@ export function Dashboard() {
         ) : (
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {rooms.data?.map((r) => (
-              <article key={r._id} className="rounded-2xl border bg-white p-4">
+              <article
+                key={r._id}
+                className="relative rounded-2xl border bg-white p-4"
+              >
                 <div className="flex justify-between">
                   <div>
-                    <b className="text-2xl">{r.roomNo}</b>
+                    <div className="flex items-center gap-2">
+                      <b className="text-2xl">{r.roomNo}</b>
+                      {r.lastVisit && (
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">
+                          {r.lastVisit.status}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-[#789087]">
                       {r.roomType} · {r.roomFloor}
                     </p>
                   </div>
-                  {r.lastVisit && (
-                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">
-                      {r.lastVisit.status}
-                    </span>
-                  )}
+                  <Link
+                    href={`/room-history/${r._id}`}
+                    className="absolute top-4 right-4 grid size-8 place-items-center rounded-xl text-[#789087] hover:bg-emerald-50 hover:text-[#18715d]"
+                    aria-label={`View history for room ${r.roomNo}`}
+                  >
+                    <Info size={16} />
+                  </Link>
                 </div>
                 <p className="mt-4 flex gap-1 text-xs text-[#789087]">
                   <Clock3 size={14} />
@@ -173,17 +182,17 @@ export function Dashboard() {
         )}
       </section>
       {picker && (
-        <HotelPicker
-          hotels={hotels.data || []}
-          select={selectHotel}
-        />
+        <HotelPicker hotels={hotels.data || []} select={selectHotel} />
       )}
       {roomModal && hotelId && (
         <RoomForm hotelId={hotelId} close={() => setRoomModal(false)} />
       )}{" "}
-      {userModal && hotelId && <UserForm hotelId={hotelId} close={() => setUserModal(false)} />}
-      {visit && <VisitForm room={visit} close={() => setVisit(null)} />}
-    </main>
+      {userModal && hotelId && (
+        <UserForm hotelId={hotelId} hotels={hotels.data || []} close={() => setUserModal(false)} />
+      )}
+{visit && <VisitForm room={visit} close={() => setVisit(null)} />}
+      </main>
+    </>
   )
 }
 function HotelPicker({
@@ -366,13 +375,47 @@ function VisitForm({ room, close }: { room: Room; close: () => void }) {
             capture="environment"
             className="hidden"
             onChange={(e) => {
-              const additions = Array.from(e.target.files || []).slice(0, 6 - photos.length)
-              setPhotos((current) => [...current, ...additions.map((file) => ({ file, url: URL.createObjectURL(file) }))])
+              const additions = Array.from(e.target.files || []).slice(
+                0,
+                6 - photos.length
+              )
+              setPhotos((current) => [
+                ...current,
+                ...additions.map((file) => ({
+                  file,
+                  url: URL.createObjectURL(file),
+                })),
+              ])
               e.currentTarget.value = ""
             }}
           />
         </label>
-        {photos.length > 0 && <div className="grid grid-cols-4 gap-2">{photos.map((photo, index) => <div key={photo.url} className="relative aspect-square"><img src={photo.url} alt={`Selected photo ${index + 1}`} className="size-full rounded-xl object-cover"/><button type="button" aria-label={`Remove photo ${index + 1}`} onClick={() => { URL.revokeObjectURL(photo.url); setPhotos((current) => current.filter((item) => item.url !== photo.url)) }} className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-[#18332b] text-white"><X size={12}/></button></div>)}</div>}
+        {photos.length > 0 && (
+          <div className="grid grid-cols-4 gap-2">
+            {photos.map((photo, index) => (
+              <div key={photo.url} className="relative aspect-square">
+                <img
+                  src={photo.url}
+                  alt={`Selected photo ${index + 1}`}
+                  className="size-full rounded-xl object-cover"
+                />
+                <button
+                  type="button"
+                  aria-label={`Remove photo ${index + 1}`}
+                  onClick={() => {
+                    URL.revokeObjectURL(photo.url)
+                    setPhotos((current) =>
+                      current.filter((item) => item.url !== photo.url)
+                    )
+                  }}
+                  className="absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-[#18332b] text-white"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <button
           disabled={m.isPending}
           className="w-full rounded-xl bg-[#186f5b] py-3 text-sm font-bold text-white"
@@ -383,14 +426,85 @@ function VisitForm({ room, close }: { room: Room; close: () => void }) {
     </Modal>
   )
 }
-function UserForm({ hotelId, close }: { hotelId: string; close: () => void }) {
-  const [name, setName] = useState(""), [email, setEmail] = useState(""), [password, setPassword] = useState("")
+function UserForm({ hotelId, hotels, close }: { hotelId: string | null; hotels: Hotel[]; close: () => void }) {
+  const [name, setName] = useState(""),
+    [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
+    [selectedHotelId, setSelectedHotelId] = useState<string>("")
   const mutation = useMutation({
-    mutationFn: () => api("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password, hotelId }) }),
-    onSuccess: () => { toast.success("Team user created"); close() },
+    mutationFn: () =>
+      api("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, hotelId: selectedHotelId || hotelId }),
+      }),
+    onSuccess: () => {
+      toast.success("Team user created")
+      close()
+    },
     onError: (error: Error) => toast.error(error.message),
   })
-  return <Modal close={close}><h2 className="pr-10 text-xl font-bold">Create team user</h2><form onSubmit={(event) => { event.preventDefault(); mutation.mutate() }} className="mt-4 space-y-2"><input required value={name} onChange={(event) => setName(event.target.value)} className="input" placeholder="Full name"/><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="input" placeholder="Email address"/><input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="input" placeholder="Temporary password"/><button disabled={mutation.isPending} className="w-full rounded-xl bg-[#186f5b] py-3 text-sm font-bold text-white">{mutation.isPending ? "Creating…" : "Create user"}</button></form></Modal>
+  return (
+    <Modal close={close}>
+      <h2 className="pr-10 text-xl font-bold">Create team user</h2>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          mutation.mutate()
+        }}
+        className="mt-4 space-y-2"
+      >
+        <input
+          required
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          className="input"
+          placeholder="Full name"
+        />
+        <input
+          required
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="input"
+          placeholder="Email address"
+        />
+        <input
+          required
+          minLength={8}
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="input"
+          placeholder="Temporary password"
+        />
+        {hotels.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-[#789087] mb-1">Hotel</label>
+            <select
+              required
+              value={selectedHotelId}
+              onChange={(event) => setSelectedHotelId(event.target.value)}
+              className="input"
+            >
+              <option value="">Select hotel</option>
+              {hotels.map((h) => (
+                <option key={h._id} value={h._id}>
+                  {h.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <button
+          disabled={mutation.isPending}
+          className="w-full rounded-xl bg-[#186f5b] py-3 text-sm font-bold text-white"
+        >
+          {mutation.isPending ? "Creating…" : "Create user"}
+        </button>
+      </form>
+    </Modal>
+  )
 }
 function Modal({
   children,
@@ -403,7 +517,12 @@ function Modal({
     <div className="fixed inset-0 z-20 grid place-items-end bg-black/30 sm:place-items-center">
       <div className="relative w-full max-w-md rounded-t-3xl bg-[#f9fbf9] p-5 sm:rounded-3xl">
         {close && (
-          <button type="button" aria-label="Close dialog" onClick={close} className="absolute top-4 right-4 grid size-9 place-items-center rounded-xl text-[#45675b] hover:bg-emerald-50">
+          <button
+            type="button"
+            aria-label="Close dialog"
+            onClick={close}
+            className="absolute top-4 right-4 grid size-9 place-items-center rounded-xl text-[#45675b] hover:bg-emerald-50"
+          >
             <X size={20} />
           </button>
         )}

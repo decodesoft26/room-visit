@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { canAccess, currentUser } from "@/lib/auth"
 import { connectDb } from "@/lib/db"
-import { Room } from "@/lib/models"
+import { Room, Visit } from "@/lib/models"
 import { createVisit } from "@/lib/services/visit.service"
 
 export async function POST(request: Request) {
@@ -19,9 +19,56 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const user = await currentUser()
-  const hotelId = new URL(request.url).searchParams.get("hotelId")
+  const url = new URL(request.url)
+  const hotelId = url.searchParams.get("hotelId")
+  const roomId = url.searchParams.get("roomId")
+  const page = parseInt(url.searchParams.get("page") || "1")
+  const limit = parseInt(url.searchParams.get("limit") || "10")
+  const search = url.searchParams.get("search") || ""
+  const status = url.searchParams.get("status") || ""
+  
   if (!hotelId || !canAccess(user, hotelId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  
   await connectDb()
-  const { Visit } = await import("@/lib/models")
-  return NextResponse.json(await Visit.find({ hotelId }).sort({ createdAt: -1 }).populate("roomId", "roomNo roomType").populate("visitBy", "name").lean())
+  
+  const query: Record<string, unknown> = { hotelId }
+  
+  if (roomId) {
+    query.roomId = roomId
+  }
+  
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { remarks: { $regex: search, $options: "i" } },
+      { "roomId.roomNo": { $regex: search, $options: "i" } },
+    ]
+  }
+  
+  if (status) {
+    query.status = status
+  }
+  
+  const skip = (page - 1) * limit
+  
+  const [visits, total] = await Promise.all([
+    Visit.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("roomId", "roomNo roomType")
+      .populate("visitBy", "name")
+      .lean(),
+    Visit.countDocuments(query),
+  ])
+  
+  return NextResponse.json({
+    visits,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  })
 }

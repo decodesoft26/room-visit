@@ -3,3 +3,9 @@
 @import "shadcn/tailwind.css";
 @custom-variant dark (&:is(.dark *));
 .input { @apply h-11 w-full rounded-xl border border-emerald-950/10 bg-white px-3 text-sm text-[#18332b] outline-none transition placeholder:text-[#a1b2ac] focus:border-[#1f9b7b] focus:ring-3 focus:ring-[#1f9b7b]/10; }
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up { animation: slide-up 0.3s ease-out; }
