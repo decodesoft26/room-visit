@@ -97,11 +97,20 @@ export function Dashboard() {
     setPicker(false)
   }
 
-  if (session.isLoading || hotels.isLoading)
+  const showDashboardSkeleton =
+    session.isLoading ||
+    hotels.isLoading ||
+    (Boolean(hotelId) && rooms.isLoading)
+
+  if (showDashboardSkeleton)
     return (
       <>
-        <Navbar user={session.data} />
-        <Skeleton />
+        <Navbar user={session.data ?? null} />
+        <main className="min-h-svh bg-transparent pt-3 pb-20 text-[#12322d] md:pt-24 md:pb-12">
+          <section className="mx-auto max-w-6xl px-3 md:px-6">
+            <DashboardSkeleton />
+          </section>
+        </main>
       </>
     )
 
@@ -244,8 +253,8 @@ export function Dashboard() {
           </div>
 
           {rooms.isLoading ? (
-            <div className="mt-5">
-              <Skeleton />
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <RoomListSkeleton />
             </div>
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -700,8 +709,69 @@ function Modal({
   )
 }
 
-function Skeleton() {
+function DashboardSkeleton() {
   return (
-    <div className="soft-card h-40 animate-pulse bg-gradient-to-r from-[#eff5f3] via-white to-[#eff5f3]" />
+    <div className="space-y-4">
+      <div className="soft-card animate-pulse overflow-hidden p-3 sm:p-4 md:p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="w-full max-w-xl space-y-3">
+            <div className="h-2.5 w-28 rounded-full bg-[#e5efed]" />
+            <div className="h-7 w-56 rounded-full bg-[#edf5f3] md:h-8 md:w-72" />
+            <div className="flex flex-wrap gap-2">
+              <div className="h-9 w-32 rounded-2xl bg-[#edf5f3]" />
+              <div className="h-9 w-28 rounded-2xl bg-[#edf5f3]" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="h-10 w-24 rounded-2xl bg-[#edf5f3]" />
+            <div className="h-10 w-28 rounded-2xl bg-[#e9f3ef]" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="metric-card animate-pulse p-3 md:p-4">
+            <div className="h-2.5 w-16 rounded-full bg-[#eaf1ef]" />
+            <div className="mt-4 flex items-end justify-between gap-2">
+              <div className="h-8 w-12 rounded-full bg-[#edf5f3] md:h-10 md:w-14" />
+              <div className="h-9 w-9 rounded-xl bg-[#edf5f3] md:h-10 md:w-10" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="soft-card animate-pulse p-3">
+        <div className="h-10 w-full rounded-2xl bg-[#edf5f3]" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="soft-card animate-pulse p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="h-8 w-16 rounded-full bg-[#edf5f3]" />
+              <div className="h-9 w-9 rounded-2xl bg-[#edf5f3]" />
+            </div>
+            <div className="mt-4 h-3 w-28 rounded-full bg-[#edf5f3]" />
+            <div className="mt-4 h-16 rounded-2xl bg-[#f2f8f6]" />
+            <div className="mt-4 h-11 w-full rounded-2xl bg-[#edf5f3]" />
+          </div>
+        ))}
+      </div>
+    </div>
   )
+}
+
+function RoomListSkeleton() {
+  return Array.from({ length: 6 }).map((_, index) => (
+    <div key={index} className="soft-card animate-pulse p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="h-8 w-16 rounded-full bg-[#edf5f3]" />
+        <div className="h-9 w-9 rounded-2xl bg-[#edf5f3]" />
+      </div>
+      <div className="mt-4 h-3 w-28 rounded-full bg-[#edf5f3]" />
+      <div className="mt-4 h-16 rounded-2xl bg-[#f2f8f6]" />
+      <div className="mt-4 h-11 w-full rounded-2xl bg-[#edf5f3]" />
+    </div>
+  ))
 }
