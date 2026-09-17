@@ -12,7 +12,7 @@ import {
   X,
   Building as BuildingIcon,
 } from "lucide-react"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -47,11 +47,20 @@ export function Navbar({
 }) {
   const router = useRouter()
   const pathname = usePathname()
+  const qc = useQueryClient()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const logout = useMutation({
     mutationFn: () => api("/api/auth/logout", { method: "POST" }),
-    onSuccess: () => router.replace("/login"),
+    onSuccess: () => {
+      qc.clear()
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith("room-visit:selected-hotel:")) {
+          localStorage.removeItem(key)
+        }
+      }
+      router.replace("/login")
+    },
     onError: () => toast.error("Sign out failed"),
   })
 
