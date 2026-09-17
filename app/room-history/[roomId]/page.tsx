@@ -145,10 +145,15 @@ export default function RoomHistoryPage() {
   const visits = visitsQuery.data?.visits || []
   const pagination = visitsQuery.data?.pagination
   const hotel = hotels.data?.find((h) => h._id === hotelId)
+  const hasActiveDialog = Boolean(selectedVisit)
 
   return (
     <>
-      <Navbar user={session.data} hotelName={hotel?.name} />
+      <Navbar
+        user={session.data}
+        hotelName={hotel?.name}
+        hideMobileTabs={hasActiveDialog}
+      />
       <main className="min-h-svh pt-3 pb-20 text-[#12322d] md:pt-28 md:pb-12">
         <section className="mx-auto max-w-6xl px-3 md:px-6">
           <div className="soft-card p-3 sm:p-4 md:p-5">

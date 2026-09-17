@@ -10,6 +10,7 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
+  UserPlus,
   X,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -102,11 +103,12 @@ export function Dashboard() {
     session.isLoading ||
     hotels.isLoading ||
     (Boolean(hotelId) && rooms.isLoading)
+  const hasActiveModal = Boolean(picker || roomModal || userModal || visit)
 
   if (showDashboardSkeleton)
     return (
       <>
-        <Navbar user={session.data ?? null} />
+        <Navbar user={session.data ?? null} hideMobileTabs={hasActiveModal} />
         <main className="min-h-svh bg-transparent pt-3 pb-20 text-[#12322d] md:pt-24 md:pb-12">
           <section className="mx-auto max-w-6xl px-3 md:px-6">
             <DashboardSkeleton />
@@ -132,56 +134,62 @@ export function Dashboard() {
 
   return (
     <>
-      <Navbar user={session.data} hotelName={hotel?.name} />
+      <Navbar
+        user={session.data}
+        hotelName={hotel?.name}
+        hideMobileTabs={hasActiveModal}
+      />
       <main className="min-h-svh bg-transparent pt-3 pb-20 text-[#12322d] md:pt-24 md:pb-12">
         <section className="mx-auto max-w-6xl px-3 md:px-6">
-          <header className="soft-card overflow-hidden p-3 sm:p-4 md:p-5">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <header className="soft-card overflow-hidden p-3 sm:p-4">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <p className="text-[10px] font-semibold tracking-[0.2em] text-[#6b8c82] uppercase">
                   Malaysia time · MYT
                 </p>
-                <h1 className="mt-1 text-2xl font-bold tracking-[-0.06em] text-[#12322d] md:text-3xl">
+                <h1 className="mt-1 text-xl font-bold tracking-[-0.06em] text-[#12322d] md:text-2xl">
                   Room visits dashboard
                 </h1>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() =>
-                      session.data.role === "SUPER_ADMIN" && setPicker(true)
-                    }
-                    className="secondary-button gap-2"
-                  >
-                    <MapPin size={16} className="text-[#1f9b7b]" />
-                    <span>{hotel?.name || "Choose hotel"}</span>
-                  </button>
-                  <Link
-                    href="/history"
-                    className="secondary-button text-[#155c4e]"
-                  >
-                    View history
-                  </Link>
-                </div>
               </div>
 
-              {session.data.role === "SUPER_ADMIN" && (
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    disabled={!hotelId}
-                    onClick={() => setUserModal(true)}
-                    className="secondary-button disabled:opacity-40"
-                  >
-                    Create user
-                  </button>
-                  <button
-                    disabled={!hotelId}
-                    onClick={() => setRoomModal(true)}
-                    className="primary-button disabled:opacity-40"
-                  >
-                    <Plus size={16} />
-                    Add room
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-2 xl:justify-end">
+                <button
+                  onClick={() =>
+                    session.data.role === "SUPER_ADMIN" && setPicker(true)
+                  }
+                  className="secondary-button flex min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden px-3 py-2 sm:flex-none"
+                >
+                  <MapPin size={16} className="shrink-0 text-[#1f9b7b]" />
+                  <span className="truncate text-left text-sm">
+                    {hotel?.name || "Choose hotel"}
+                  </span>
+                </button>
+
+                {session.data.role === "SUPER_ADMIN" && (
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="Create user"
+                      title="Create user"
+                      disabled={!hotelId}
+                      onClick={() => setUserModal(true)}
+                      className="secondary-button grid size-10 place-items-center p-0 disabled:opacity-40"
+                    >
+                      <UserPlus size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Add room"
+                      title="Add room"
+                      disabled={!hotelId}
+                      onClick={() => setRoomModal(true)}
+                      className="primary-button grid size-10 place-items-center p-0 disabled:opacity-40"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 
@@ -326,7 +334,11 @@ export function Dashboard() {
         </section>
 
         {picker && (
-          <HotelPicker hotels={hotels.data || []} select={selectHotel} />
+          <HotelPicker
+            hotels={hotels.data || []}
+            select={selectHotel}
+            close={() => setPicker(false)}
+          />
         )}
         {roomModal && hotelId && (
           <RoomForm hotelId={hotelId} close={() => setRoomModal(false)} />
@@ -347,9 +359,11 @@ export function Dashboard() {
 function HotelPicker({
   hotels,
   select,
+  close,
 }: {
   hotels: Hotel[]
   select: (id: string) => void
+  close: () => void
 }) {
   const qc = useQueryClient()
   const [name, setName] = useState("")
@@ -371,7 +385,7 @@ function HotelPicker({
   })
 
   return (
-    <Modal>
+    <Modal close={close}>
       <h2 className="text-xl font-bold tracking-[-0.04em] text-[#12322d]">
         Select a hotel
       </h2>

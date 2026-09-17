@@ -39,9 +39,11 @@ const navItems = [
 export function Navbar({
   user,
   hotelName,
+  hideMobileTabs = false,
 }: {
   user: User | null | undefined
   hotelName?: string
+  hideMobileTabs?: boolean
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -113,7 +115,11 @@ export function Navbar({
         </div>
       </nav>
 
-      <nav className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-[22px] border border-[rgba(18,52,46,0.08)] bg-white/85 p-1.5 shadow-[0_20px_40px_rgba(15,33,29,0.12)] backdrop-blur-2xl md:hidden">
+      <nav
+        className={`${
+          hideMobileTabs ? "hidden" : "fixed"
+        } bottom-4 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-[22px] border border-[rgba(18,52,46,0.08)] bg-white/85 p-1.5 shadow-[0_20px_40px_rgba(15,33,29,0.12)] backdrop-blur-2xl md:hidden`}
+      >
         <div className="grid grid-cols-3 gap-1.5">
           {navItems.map((item) => (
             <Link
