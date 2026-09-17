@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Building2,
@@ -70,6 +70,7 @@ export function Dashboard() {
     queryKey: ["rooms", hotelId],
     queryFn: () => api<Room[]>(`/api/rooms?hotelId=${hotelId}`),
     enabled: !!hotelId,
+    staleTime: 30_000,
   })
 
   useEffect(() => {
@@ -484,6 +485,21 @@ function RoomForm({ hotelId, close }: { hotelId: string; close: () => void }) {
 function VisitForm({ room, close }: { room: Room; close: () => void }) {
   const qc = useQueryClient()
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([])
+  const galleryInputRef = useRef<HTMLInputElement | null>(null)
+  const cameraInputRef = useRef<HTMLInputElement | null>(null)
+
+  const addPhotos = (files: FileList | null) => {
+    const additions = Array.from(files || []).slice(0, 6 - photos.length)
+    if (!additions.length) return
+
+    setPhotos((current) => [
+      ...current,
+      ...additions.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    ])
+  }
 
   const m = useMutation({
     mutationFn: (f: FormData) =>
@@ -527,31 +543,50 @@ function VisitForm({ room, close }: { room: Room; close: () => void }) {
           className="input min-h-24 py-3"
           placeholder="Remarks"
         />
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#bfe1d6] bg-[#f3faf7] p-3 text-sm font-semibold text-[#1d7d67]">
-          <ImagePlus size={18} />
-          {photos.length ? `${photos.length} photo(s) selected` : "Add photos"}
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            capture="environment"
-            className="hidden"
-            onChange={(e) => {
-              const additions = Array.from(e.target.files || []).slice(
-                0,
-                6 - photos.length
-              )
-              setPhotos((current) => [
-                ...current,
-                ...additions.map((file) => ({
-                  file,
-                  url: URL.createObjectURL(file),
-                })),
-              ])
-              e.currentTarget.value = ""
-            }}
-          />
-        </label>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#bfe1d6] bg-[#f3faf7] p-3 text-sm font-semibold text-[#1d7d67]"
+          >
+            <ImagePlus size={18} />
+            Gallery
+          </button>
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#bfe1d6] bg-[#ecf7f4] p-3 text-sm font-semibold text-[#1d7d67]"
+          >
+            <ImagePlus size={18} />
+            Camera
+          </button>
+        </div>
+
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            addPhotos(e.target.files)
+            e.currentTarget.value = ""
+          }}
+        />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            addPhotos(e.target.files)
+            e.currentTarget.value = ""
+          }}
+        />
+
         {photos.length > 0 && (
           <div className="grid grid-cols-4 gap-2">
             {photos.map((photo, index) => (
@@ -691,8 +726,8 @@ function Modal({
   close?: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-20 grid place-items-end bg-[#0c1c1a]/40 p-2 sm:place-items-center sm:p-6">
-      <div className="relative w-full max-w-md rounded-[30px] border border-[rgba(18,52,46,0.08)] bg-[#fbfdfc] p-5 shadow-[0_32px_60px_rgba(15,33,29,0.12)] sm:rounded-[28px]">
+    <div className="fixed inset-0 z-20 flex items-end justify-center bg-[#0c1c1a]/40 p-2 pb-[max(1.75rem,calc(env(safe-area-inset-bottom)+0.75rem))] sm:items-center sm:p-6">
+      <div className="relative max-h-[calc(100vh-4.25rem)] w-full max-w-md overflow-y-auto rounded-[30px] border border-[rgba(18,52,46,0.08)] bg-[#fbfdfc] p-5 shadow-[0_32px_60px_rgba(15,33,29,0.12)] sm:rounded-[28px]">
         {close && (
           <button
             type="button"
