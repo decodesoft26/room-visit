@@ -325,12 +325,7 @@ function HistoryPageContent() {
     return Array.from(new Set(values)).sort()
   }, [roomsQuery.data])
 
-  if (
-    session.isLoading ||
-    hotels.isLoading ||
-    roomsQuery.isLoading ||
-    visitsQuery.isLoading
-  ) {
+  if (session.isLoading || hotels.isLoading || roomsQuery.isLoading) {
     return (
       <>
         <Navbar user={session.data} />
@@ -346,6 +341,7 @@ function HistoryPageContent() {
   const visits = visitsQuery.data?.visits || []
   const pagination = visitsQuery.data?.pagination
   const hotel = hotels.data?.find((h) => h._id === hotelId)
+  const isPostsLoading = visitsQuery.isLoading || visitsQuery.isFetching
   const hasActiveDialog = Boolean(selected)
 
   return (
@@ -409,7 +405,34 @@ function HistoryPageContent() {
               </div>
 
               <div className="history-scrollbar overflow-visible pr-1 md:h-[calc(100vh-220px)] md:overflow-y-auto">
-                {hotelId && visits.length === 0 ? (
+                {isPostsLoading &&
+                (!visits.length || visitsQuery.isFetching) ? (
+                  <div className="space-y-4 pb-2">
+                    {[1, 2, 3].map((item) => (
+                      <div
+                        key={item}
+                        className="animate-pulse overflow-hidden rounded-[28px] border border-[rgba(18,52,46,0.08)] bg-white shadow-[0_16px_40px_rgba(17,41,36,0.04)]"
+                      >
+                        <div className="flex items-center gap-3 px-4 py-4">
+                          <div className="h-10 w-10 rounded-full bg-[#edf4f2]" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 w-28 rounded-full bg-[#edf4f2]" />
+                            <div className="h-2.5 w-36 rounded-full bg-[#edf4f2]" />
+                          </div>
+                          <div className="h-6 w-16 rounded-full bg-[#edf4f2]" />
+                        </div>
+                        <div className="space-y-3 px-4 pb-3">
+                          <div className="h-5 w-3/5 rounded-full bg-[#edf4f2]" />
+                          <div className="h-3 w-full rounded-full bg-[#edf4f2]" />
+                          <div className="h-3 w-4/5 rounded-full bg-[#edf4f2]" />
+                        </div>
+                        <div className="px-4 pb-4">
+                          <div className="h-72 w-full rounded-[22px] bg-[#edf4f2]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : hotelId && visits.length === 0 ? (
                   <div className="soft-card p-8 text-center text-sm text-[#67857d] md:p-12">
                     No visits recorded for{" "}
                     {selectedRoomNo ? `room ${selectedRoomNo}` : "this filter"}{" "}
