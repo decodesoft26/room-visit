@@ -753,8 +753,8 @@ function Modal({
   close?: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-20 flex items-end justify-center bg-[#0c1c1a]/40 p-2 pb-[max(1.75rem,calc(env(safe-area-inset-bottom)+0.75rem))] sm:items-center sm:p-6">
-      <div className="relative max-h-[calc(100vh-4.25rem)] w-full max-w-md overflow-y-auto rounded-[30px] border border-[rgba(18,52,46,0.08)] bg-[#fbfdfc] p-5 shadow-[0_32px_60px_rgba(15,33,29,0.12)] sm:rounded-[28px]">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-[#0c1c1a]/40 p-2 pb-[max(1.75rem,calc(env(safe-area-inset-bottom)+0.75rem))] sm:items-center sm:p-6 md:items-start md:pt-24 md:pb-8">
+      <div className="thin-scrollbar relative max-h-[calc(100vh-7rem)] w-full max-w-md overflow-y-auto rounded-[30px] border border-[rgba(18,52,46,0.08)] bg-[#fbfdfc] p-5 shadow-[0_32px_60px_rgba(15,33,29,0.12)] sm:rounded-[28px]">
         {close && (
           <button
             type="button"

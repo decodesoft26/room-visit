@@ -101,29 +101,34 @@ body {
   background: #f6faf8;
 }
 
-.history-scrollbar {
+.history-scrollbar,
+.thin-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(169, 200, 192, 0.9) transparent;
+  scrollbar-color: rgba(158, 184, 177, 0.9) transparent;
 }
 
-.history-scrollbar::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+.history-scrollbar::-webkit-scrollbar,
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.history-scrollbar::-webkit-scrollbar-track {
+.history-scrollbar::-webkit-scrollbar-track,
+.thin-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.history-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(169, 200, 192, 0.9);
+.history-scrollbar::-webkit-scrollbar-thumb,
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(158, 184, 177, 0.9);
   border: 2px solid transparent;
   border-radius: 9999px;
   background-clip: padding-box;
 }
 
-.history-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(112, 170, 159, 0.95);
+.history-scrollbar::-webkit-scrollbar-thumb:hover,
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(111, 160, 150, 0.95);
 }
 
 @keyframes slide-up {

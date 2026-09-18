@@ -702,9 +702,9 @@ function DetailsDialog({ visit, close }: { visit: Visit; close: () => void }) {
   }, [visit._id])
 
   return (
-    <div className="fixed inset-0 z-30 bg-[#0d1f1b]/40 p-3 sm:p-5">
+    <div className="fixed inset-0 z-[70] bg-[#0d1f1b]/40 p-3 sm:p-5 md:pt-24 md:pb-8">
       <div className="mx-auto flex h-full max-w-3xl items-center justify-center">
-        <div className="relative w-full overflow-hidden rounded-[30px] bg-[#fbfdfc] shadow-[0_30px_80px_rgba(15,33,29,0.2)]">
+        <div className="relative max-h-[calc(100vh-8rem)] w-full overflow-hidden rounded-[30px] bg-[#fbfdfc] shadow-[0_30px_80px_rgba(15,33,29,0.2)]">
           <button
             onClick={close}
             aria-label="Close visit details"
@@ -713,7 +713,7 @@ function DetailsDialog({ visit, close }: { visit: Visit; close: () => void }) {
             <X size={18} />
           </button>
 
-          <div className="p-4 sm:p-5">
+          <div className="thin-scrollbar max-h-[calc(100vh-8rem)] overflow-y-auto p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold tracking-[0.2em] text-[#1f9b7b] uppercase">
